@@ -681,13 +681,21 @@ function startPriceUpdates() {
 
 // ── FIRESTORE LISTENERS ────────────────────────────────────
 // Alert listener — notifica tutti i client (follower inclusi)
-let _lastAlertTs = Date.now();
+// Timestamp di avvio pagina — ignora alert precedenti
+const _pageLoadTs = Date.now();
+let _alertsReady  = false;
 onSnapshot(query(collection(db,'alerts'), orderBy('ts','desc')), snap => {
+  // Al primo snapshot (caricamento pagina) segniamo solo che siamo pronti
+  // senza mostrare nulla — evita alert storici
+  if (!_alertsReady) {
+    _alertsReady = true;
+    return;
+  }
   snap.docChanges().forEach(change => {
     if (change.type === 'added') {
       const a = change.doc.data();
-      // Mostra solo alert nuovi (non quelli storici al caricamento)
-      if (a.ts > _lastAlertTs - 5000) {
+      // Mostra solo se l'alert è stato creato dopo il caricamento della pagina
+      if (a.ts > _pageLoadTs) {
         showAlert(a.type, a);
         playBeep(a.type === 'open' ? 880 : (a.rMult >= 0 ? 660 : 330));
       }
@@ -803,11 +811,14 @@ window.openPosition = async function() {
   });
   // Pubblica alert apertura su Firestore
   try {
-    const ins4 = instr(sym);
     await addDoc(collection(db,'alerts'), {
       type: 'open',
-      sym, dir, entry, sl, tp, notes,
-      ts: Date.now()
+      sym, dir,
+      entry: entry || null,
+      sl:    sl    || null,
+      tp:    tp    || null,
+      notes: notes || '',
+      ts:    Date.now()
     });
   } catch(e) { /* non bloccante */ }
 
