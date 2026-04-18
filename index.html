@@ -497,6 +497,27 @@ select option{background:var(--bg3)}
     <div class="alert-title" id="alertTitle">Nuova Operazione!</div>
     <div class="alert-sym" id="alertSym">—</div>
     <div class="alert-sub" id="alertSub">—</div>
+    <!-- Dettagli chiusura (visibili solo per alert close) -->
+    <div id="alertCloseDetails" style="display:none;margin:10px 0;background:var(--bg3);border-radius:8px;padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Entry</div>
+          <div id="alertEntry" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Exit</div>
+          <div id="alertExit" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Net P&L</div>
+          <div id="alertNet" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;text-align:center">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">R Realizzata</div>
+        <div id="alertR" style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:800">—</div>
+      </div>
+    </div>
     <button class="alert-dismiss" onclick="dismissAlert()">OK, ho visto</button>
   </div>
 </div>
@@ -659,6 +680,21 @@ function startPriceUpdates() {
 }
 
 // ── FIRESTORE LISTENERS ────────────────────────────────────
+// Alert listener — notifica tutti i client (follower inclusi)
+let _lastAlertTs = Date.now();
+onSnapshot(query(collection(db,'alerts'), orderBy('ts','desc')), snap => {
+  snap.docChanges().forEach(change => {
+    if (change.type === 'added') {
+      const a = change.doc.data();
+      // Mostra solo alert nuovi (non quelli storici al caricamento)
+      if (a.ts > _lastAlertTs - 5000) {
+        showAlert(a.type, a);
+        playBeep(a.type === 'open' ? 880 : (a.rMult >= 0 ? 660 : 330));
+      }
+    }
+  });
+});
+
 // Closed trades
 onSnapshot(query(collection(db,'trades'), orderBy('ts','desc')), snap => {
   trades = snap.docs.map(d=>({...d.data(), _id:d.id}));
@@ -765,6 +801,16 @@ window.openPosition = async function() {
     tickSize: ins3.tickSize || 1,
     notes, ts: Date.now(), openedAt: new Date().toISOString()
   });
+  // Pubblica alert apertura su Firestore
+  try {
+    const ins4 = instr(sym);
+    await addDoc(collection(db,'alerts'), {
+      type: 'open',
+      sym, dir, entry, sl, tp, notes,
+      ts: Date.now()
+    });
+  } catch(e) { /* non bloccante */ }
+
   hideAddOpen();
   toast('📡 Posizione aperta e pubblicata!');
   playBeep(660);
@@ -1305,22 +1351,42 @@ window.addInstrument = function() {
 
 // ── ALERT & BEEP ───────────────────────────────────────────
 function showAlert(type, pos) {
-  const overlay=document.getElementById('alertOverlay');
-  document.getElementById('alertIcon').textContent  = type==='open'?'📡':'✅';
-  document.getElementById('alertTitle').textContent = type==='open'?'Posizione Aperta!':'Posizione Chiusa!';
+  const overlay = document.getElementById('alertOverlay');
+  const details = document.getElementById('alertCloseDetails');
+  const rMult   = pos.rMult ?? null;
+  const net     = pos.net   ?? null;
+
+  document.getElementById('alertIcon').textContent  = type==='open' ? '📡' : (rMult>=0 ? '✅' : '🛑');
+  document.getElementById('alertTitle').textContent = type==='open' ? 'Posizione Aperta!' : 'Posizione Chiusa!';
   document.getElementById('alertSym').textContent   = pos.sym;
-  const rStr = pos.rMult !== undefined
-    ? `  |  ${pos.rMult>=0?'+':''}${pos.rMult.toFixed(2)}R  (${pos.net>=0?'+':''}${pos.net?.toFixed(2)||'—'}${settings.currency})`
-    : '';
-  document.getElementById('alertSub').textContent = `${pos.dir} — Entry: ${pos.entry?.toFixed(2)||'—'}${rStr}${pos.notes?' | '+pos.notes:''}`;
+  document.getElementById('alertSub').textContent   = pos.dir + (pos.notes ? ' — ' + pos.notes : '');
+
+  if (type === 'close' && rMult !== null) {
+    details.style.display = 'block';
+    const rEl = document.getElementById('alertR');
+    rEl.textContent = (rMult>=0?'+':'') + rMult.toFixed(2) + 'R';
+    rEl.style.color = rMult > 0 ? 'var(--green)' : rMult < 0 ? 'var(--red)' : 'var(--sub)';
+    document.getElementById('alertEntry').textContent = pos.entry?.toFixed(2) || '—';
+    document.getElementById('alertExit').textContent  = pos.exitPrice?.toFixed(2) || '—';
+    const netEl = document.getElementById('alertNet');
+    netEl.textContent = net !== null ? (net>=0?'+':'')+CUR()+Math.abs(net).toFixed(2) : '—';
+    netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    details.style.display = 'none';
+  }
+
   overlay.classList.add('show');
+
   // Browser notification
-  if(Notification.permission==='granted') {
+  const notifBody = type==='open'
+    ? `${pos.dir} — Entry: ${pos.entry?.toFixed(2)||'—'}`
+    : `${pos.dir} — ${(rMult>=0?'+':'') + (rMult?.toFixed(2)||'?')}R — Net: ${CUR()}${net?.toFixed(2)||'?'}`;
+  if (Notification.permission==='granted') {
     new Notification(`TradingDesk: ${pos.sym} ${type==='open'?'APERTA':'CHIUSA'}`, {
-      body:`${pos.dir} — Entry ${pos.entry?.toFixed(2)||'—'}`,
+      body: notifBody,
       icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%2300D4AA"/></svg>'
     });
-  } else if(Notification.permission!=='denied') {
+  } else if (Notification.permission !== 'denied') {
     Notification.requestPermission();
   }
 }
