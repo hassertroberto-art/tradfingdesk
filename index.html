@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradingDesk Pro</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:#0A0E14; --bg2:#111620; --bg3:#181E2A; --bg4:#1E2535;
+  --border:#252D3D; --border2:#2E3A50;
+  --green:#00D4AA; --green-dim:#00D4AA33;
+  --red:#FF4D6A;   --red-dim:#FF4D6A33;
+  --blue:#4D8EFF;  --blue-dim:#4D8EFF22;
+  --gold:#FFB340;  --gold-dim:#FFB34022;
+  --purple:#A78BFA;
+  --text:#D8E0EE; --sub:#6B7A99; --dim:#3A4460;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;font-size:13px}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.5px}.logo em{color:var(--green);font-style:normal}
+.nav{display:flex;gap:4px}
+.nav-btn{background:none;border:none;color:var(--sub);padding:6px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.nav-btn:hover,.nav-btn.active{background:var(--bg3);color:var(--text)}
+.nav-btn.active{color:var(--green)}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--sub);display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── PAGES ── */
+.page{display:none;padding:20px 24px;max-width:1600px;margin:0 auto}
+.page.active{display:block}
+
+/* ── GRIDS ── */
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:1fr 380px;gap:14px;margin-bottom:14px}
+.grid-2b{display:grid;grid-template-columns:1fr 380px;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+
+/* ── KPI ── */
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;animation:fadeUp .4s ease both}
+.kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:var(--kpi-color,var(--border))}
+.kpi-label{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--kpi-color,var(--text));line-height:1}
+.kpi-foot{font-size:10px;color:var(--sub);margin-top:6px;font-family:'JetBrains Mono',monospace}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PANEL ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.panel-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.panel-title{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
+.panel-badge{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--sub)}
+
+/* ── OPEN POSITIONS PANEL ── */
+.open-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.open-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--green))}
+.open-panel-title{font-size:12px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.live-badge{background:rgba(255,179,64,.15);border:1px solid var(--gold);border-radius:4px;padding:2px 8px;font-size:9px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:4px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:blink 1s infinite}
+
+/* ── POSITION CARD ── */
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;transition:border-color .2s}
+.pos-card.long-card{border-left:3px solid var(--blue)}
+.pos-card.short-card{border-left:3px solid var(--gold)}
+.pos-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pos-sym{font-size:18px;font-weight:800;color:var(--text)}
+.pos-dir{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px}
+.pos-dir.long{background:var(--blue-dim);color:var(--blue)}
+.pos-dir.short{background:var(--gold-dim);color:var(--gold)}
+.pos-grid-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pos-item label{font-size:8px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:2px}
+.pos-item .pv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+.pos-price-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--bg4);border-radius:6px;padding:8px;margin-bottom:10px}
+.pos-price-item{text-align:center}
+.pos-price-item label{font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;display:block}
+.pos-price-item .ppv{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+.upnl-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.upnl-fill{height:100%;border-radius:2px;transition:width .5s}
+.pos-footer{display:flex;justify-content:space-between;align-items:center}
+.upnl-val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700}
+.close-pos-btn{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:4px 12px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s}
+.close-pos-btn:hover{background:var(--red);color:#fff}
+.no-pos{text-align:center;padding:30px;color:var(--dim);font-size:12px}
+
+/* ── TABLES ── */
+canvas{display:block;width:100%}
+.t-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:9px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(37,45,61,.6);white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,.015)}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:.5px}
+.tag-win{background:var(--green-dim);color:var(--green)}
+.tag-loss{background:var(--red-dim);color:var(--red)}
+.tag-be{background:rgba(107,122,153,.15);color:var(--sub)}
+.tag-long{background:var(--blue-dim);color:var(--blue)}
+.tag-short{background:var(--gold-dim);color:var(--gold)}
+.del-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:0 4px;transition:color .2s}
+.del-btn:hover{color:var(--red)}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+label{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+select option{background:var(--bg3)}
+.form-section-title{font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:12px}
+
+.computed-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin:10px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.computed-item label{font-size:8px}
+.computed-item .cv{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;margin-top:4px}
+
+.submit-btn{width:100%;margin-top:10px;background:var(--green);border:none;color:#0A0E14;padding:11px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:opacity .2s}
+.submit-btn:hover{opacity:.85}
+.submit-btn.red-btn{background:var(--red);color:#fff}
+
+/* ── RADAR ── */
+.radar-wrap{display:flex;flex-direction:column;align-items:center}
+.score-display{text-align:center;margin-top:8px;width:100%}
+.score-num{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--green)}
+.score-lbl{font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:1px}
+.score-bar{width:100%;height:5px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red) 0%,var(--gold) 40%,var(--green) 75%,#00FFD0 100%);transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+/* ── SETTINGS ── */
+.instr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.instr-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;transition:border-color .2s}
+.instr-card:hover{border-color:var(--border2)}
+.instr-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between}
+.instr-row{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+.instr-row input{padding:6px 8px;font-size:11px}
+.remove-instr{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;transition:color .2s}
+.remove-instr:hover{color:var(--red)}
+.section-title{font-size:11px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.small-btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.small-btn:hover{border-color:var(--green);color:var(--green)}
+.small-btn.danger:hover{border-color:var(--red);color:var(--red)}
+.risk-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.risk-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+
+/* ── ADMIN LOGIN ── */
+.admin-lock{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:30px;text-align:center;margin-bottom:14px}
+.admin-lock h3{font-size:16px;font-weight:800;margin-bottom:6px}
+.admin-lock p{font-size:11px;color:var(--sub);margin-bottom:16px}
+.admin-row{display:flex;gap:8px;max-width:320px;margin:0 auto}
+
+/* ── ALERT OVERLAY ── */
+.alert-overlay{position:fixed;top:20px;right:20px;z-index:500;display:none;flex-direction:column;align-items:flex-end;gap:8px}
+.alert-overlay.show{display:flex}
+.alert-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:20px 24px;text-align:center;width:320px;animation:alertPop .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+@keyframes alertPop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.alert-icon{font-size:32px;margin-bottom:8px}
+.alert-title{font-size:15px;font-weight:800;margin-bottom:4px}
+.alert-sub{font-size:13px;color:var(--sub);margin-bottom:20px}
+.alert-sym{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-bottom:4px}
+.alert-dismiss{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 24px;border-radius:8px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#0A0E14;padding:10px 18px;border-radius:8px;font-weight:800;font-size:13px;transform:translateY(60px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{background:var(--red);color:#fff}
+
+/* ── GORDON AVATAR ── */
+.gordon-overlay{position:fixed;bottom:24px;left:24px;z-index:600;display:none;align-items:flex-end;gap:14px}
+.gordon-overlay.show{display:flex;animation:gordonSlide .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes gordonSlide{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.gordon-svg-wrap{flex-shrink:0;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.gordon-bubble{background:var(--bg2);border:1px solid var(--gold);border-radius:14px 14px 14px 4px;padding:14px 16px;max-width:280px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.gordon-bubble::before{content:'';position:absolute;bottom:18px;left:-10px;width:12px;height:12px;background:var(--bg2);border-left:1px solid var(--gold);border-bottom:1px solid var(--gold);clip-path:polygon(100% 0,100% 100%,0 100%)}
+.gordon-name{font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.gordon-text{font-size:13px;font-weight:600;color:var(--text);line-height:1.5;font-family:'Syne',sans-serif}
+.gordon-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;transition:color .2s}
+.gordon-close:hover{color:var(--text)}
+@keyframes gordTalk{from{d:path('M 38 62 Q 50 66 62 62')}to{d:path('M 38 62 Q 50 72 62 62')}}
+.gordon-mouth-path{animation:none}
+.gordon-mouth-path.talking{animation:mouthMove .15s infinite alternate ease-in-out}
+@keyframes mouthMove{from{transform:scaleY(1)}to{transform:scaleY(2);transform-origin:center top}}
+
+/* ── TRADINGVIEW WIDGET ── */
+.tv-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.tv-panel-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 0}
+.tv-panel-title{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
+.tv-widget-wrap{height:320px;width:100%}
+
+/* ── CLOSE TRADE MODAL ── */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px;width:480px;max-width:95vw;animation:alertPop .25s cubic-bezier(.34,1.56,.64,1)}
+.modal-title{font-size:15px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.modal-sym{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:var(--gold)}
+.modal-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.r-display{text-align:center;background:var(--bg3);border-radius:10px;padding:16px;margin:12px 0;border:1px solid var(--border)}
+.r-number{font-family:'JetBrains Mono',monospace;font-size:48px;font-weight:800;line-height:1}
+.r-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sub);margin-top:4px}
+.r-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.r-item{background:var(--bg4);border-radius:6px;padding:8px;text-align:center}
+.r-item label{font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px}
+.r-item .rv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+
+/* ── FIREBASE STATUS ── */
+.fb-status{font-size:10px;padding:3px 10px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.fb-ok{background:rgba(0,212,170,.1);color:var(--green);border:1px solid var(--green-dim)}
+.fb-err{background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.empty-state{text-align:center;padding:30px;color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:20px">
+    <div class="logo">Trading<em>Desk</em></div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="showPage('trades')">Operazioni</button>
+      <button class="nav-btn" onclick="showPage('stats')">Statistiche</button>
+      <button class="nav-btn" onclick="showPage('settings')">⚙ Impostazioni</button>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span class="fb-status" id="fbStatus">⏳ Firebase...</span>
+    <div class="pill"><span class="dot"></span><span id="topDate">—</span></div>
+    <div class="pill" id="topPnl">Net P&L: —</div>
+    <div class="pill" id="modeIndicator" style="color:var(--sub)">👁 Viewer</div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="page active" id="page-dashboard">
+
+  <!-- ADMIN LOGIN (shown when not authenticated) -->
+  <div class="admin-lock" id="adminLock">
+    <h3>🔐 Modalità Admin</h3>
+    <p>Inserisci la password per abilitare l'inserimento e gestione delle operazioni.</p>
+    <div class="admin-row">
+      <input type="password" id="adminPwd" placeholder="Password admin..." onkeydown="if(event.key==='Enter')adminLogin()">
+      <button class="small-btn" onclick="adminLogin()">Accedi</button>
+    </div>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="grid-5" id="kpiRow"></div>
+
+  <!-- TRADINGVIEW MARKET OVERVIEW WIDGET -->
+  <div class="tv-panel">
+    <div class="tv-panel-hd">
+      <span class="tv-panel-title">📊 Quotazioni Live — TradingView</span>
+      <span style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace">Dati real-time</span>
+    </div>
+    <div class="tv-widget-wrap">
+      <div class="tradingview-widget-container" style="height:100%;width:100%">
+        <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+        {
+          "width": "100%",
+          "height": "100%",
+          "symbolsGroups": [
+            {
+              "name": "Forex",
+              "symbols": [
+                {"name": "OANDA:EURUSD", "displayName": "EURUSD"}
+              ]
+            },
+            {
+              "name": "Crypto",
+              "symbols": [
+                {"name": "BINANCE:BTCUSDT", "displayName": "BTCUSD"}
+              ]
+            },
+            {
+              "name": "ETF & Azioni",
+              "symbols": [
+                {"name": "AMEX:SPY", "displayName": "SPY"},
+                {"name": "NASDAQ:QQQ", "displayName": "QQQ"},
+                {"name": "AMEX:IWM", "displayName": "IWM"},
+                {"name": "AMEX:UCO", "displayName": "IBUSOIL"},
+                {"name": "NASDAQ:TSLA", "displayName": "TSLA"},
+                {"name": "NASDAQ:NVDA", "displayName": "NVDA"},
+                {"name": "NASDAQ:AMD", "displayName": "AMD"}
+              ]
+            }
+          ],
+          "showSymbolLogo": false,
+          "isTransparent": true,
+          "colorTheme": "dark",
+          "locale": "it"
+        }
+        </script>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPEN POSITIONS (sempre visibile, in cima) -->
+  <div class="open-panel">
+    <div class="open-panel-title">
+      <span>📡 Posizioni Aperte</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+        <span class="panel-badge" id="openCount">0 posizioni</span>
+        <button class="small-btn" id="addOpenBtn" onclick="showAddOpen()" style="display:none">+ Apri Posizione</button>
+      </div>
+    </div>
+    <div class="pos-grid" id="posGrid">
+      <div class="no-pos">Nessuna posizione aperta</div>
+    </div>
+  </div>
+
+  <!-- FORM APRI POSIZIONE (admin only, hidden by default) -->
+  <div class="panel" id="openPosForm" style="display:none">
+    <div class="panel-hd"><span class="panel-title">Apri Nuova Posizione</span><button class="small-btn" onclick="hideAddOpen()">✕ Chiudi</button></div>
+
+    <!-- RIGA 1: Strumento, Direzione, Tick Value -->
+    <div class="form-grid fg3" style="margin-bottom:8px">
+      <div class="form-group"><label>Strumento</label><select id="op-sym" onchange="onOpSymChange()"></select></div>
+      <div class="form-group"><label>Direzione</label>
+        <select id="op-dir" onchange="calcOpPnl()"><option value="LONG">LONG ▲</option><option value="SHORT">SHORT ▼</option></select>
+      </div>
+      <div class="form-group"><label>Tick Value — <span id="op-tv-cur"></span></label><input type="number" id="op-tv" step="0.01" oninput="calcOpPnl()"></div>
+    </div>
+
+    <!-- SL DI PREZZO (unica modalità) -->
+    <div id="sl-price-inputs">
+      <div class="form-grid fg3" style="margin-bottom:8px">
+        <div class="form-group">
+          <label>Prezzo Entrata</label>
+          <input type="number" id="op-entry-price" placeholder="21050.00" step="0.01" oninput="calcOpPnl()">
+        </div>
+        <div class="form-group">
+          <label>Stop Loss Price</label>
+          <input type="number" id="op-sl-price" placeholder="21000.00" step="0.01" oninput="calcOpPnl()">
+        </div>
+        <div class="form-group">
+          <label>Take Profit Price</label>
+          <input type="number" id="op-tp-price" placeholder="21150.00" step="0.01" oninput="calcOpPnl()">
+        </div>
+      </div>
+      <div class="form-grid" style="margin-bottom:8px">
+        <div class="form-group">
+          <label>Size calcolata (max risk <span id="op-maxrisk-lbl"></span>)</label>
+          <input type="number" id="op-size-price" readonly style="color:var(--green);font-weight:700">
+        </div>
+        <div class="form-group">
+          <label>Risk Effettivo (calcolato)</label>
+          <input type="number" id="op-risk-price" readonly style="color:var(--red);font-weight:700">
+        </div>
+      </div>
+    </div>
+    <!-- hidden inputs for cash mode compatibility -->
+    <input type="hidden" id="sl-mode-cash" value="cash">
+    <input type="hidden" id="sl-mode-price" value="price">
+    <input type="hidden" id="op-risk-cash" value="">
+    <input type="hidden" id="op-entry-cash" value="">
+    <input type="hidden" id="op-rr-cash" value="">
+    <input type="hidden" id="op-size-cash" value="">
+    <input type="hidden" id="op-sl-cash" value="">
+    <input type="hidden" id="op-tp-cash" value="">
+
+    <!-- COMPUTED BOX — risultati -->
+    <div class="computed-box" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div class="computed-item"><label>Risk $</label><div class="cv" id="op-risk-val" style="color:var(--red)">—</div></div>
+      <div class="computed-item"><label>Target $</label><div class="cv" id="op-tp-val" style="color:var(--green)">—</div></div>
+      <div class="computed-item"><label>R:R</label><div class="cv" id="op-rr-val" style="color:var(--gold)">—</div></div>
+      <div class="computed-item"><label>Size</label><div class="cv" id="op-size-val" style="color:var(--blue)">—</div></div>
+    </div>
+
+    <div class="form-group" style="margin-top:8px"><label>Note / Setup</label><input type="text" id="op-notes" placeholder="Setup, confluenze..."></div>
+    <button class="submit-btn" onclick="openPosition()">📡 Pubblica Posizione Aperta</button>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="grid-2">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-hd">
+        <span class="panel-title">Equity Curve</span>
+        <span class="panel-badge" id="eqBadge">—</span>
+      </div>
+      <canvas id="eqCanvas" height="160"></canvas>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-hd"><span class="panel-title">Performance Score</span></div>
+      <div class="radar-wrap">
+        <canvas id="radarCanvas" width="240" height="180"></canvas>
+        <div class="score-display">
+          <div class="score-num" id="scoreNum">—</div>
+          <div class="score-lbl">Score / 100</div>
+          <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT TRADES + ADD FORM -->
+  <div class="grid-2b">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-hd">
+        <span class="panel-title">Ultime Operazioni Chiuse</span>
+        <span class="panel-badge" id="recentBadge">0</span>
+      </div>
+      <div class="t-wrap">
+        <table><thead><tr>
+          <th>#</th><th>Data</th><th>Sym</th><th>Dir</th>
+          <th>Ticks</th><th>Gross</th><th>Netto</th><th>R-Mult</th><th>Esito</th>
+        </tr></thead><tbody id="recentBody"></tbody></table>
+      </div>
+    </div>
+    <div class="panel" id="addTradePanel" style="margin-bottom:0">
+      <div class="panel-hd"><span class="panel-title">Chiudi / Registra Trade</span></div>
+      <div class="form-grid fg3">
+        <div class="form-group"><label>Data</label><input type="date" id="f-date"></div>
+        <div class="form-group"><label>Strumento</label><select id="f-sym" onchange="onSymChange()"></select></div>
+        <div class="form-group"><label>Direzione</label>
+          <select id="f-dir"><option value="LONG">LONG ▲</option><option value="SHORT">SHORT ▼</option></select>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="form-group"><label>Size</label><input type="number" id="f-size" value="1" min="1" oninput="recalc()"></div>
+        <div class="form-group"><label>Ticks mossi (neg=loss)</label><input type="number" id="f-ticks" placeholder="es. 40" oninput="recalc()"></div>
+      </div>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="form-group"><label>Tick Value</label><input type="number" id="f-tv" step="0.01" oninput="recalc()"></div>
+        <div class="form-group"><label>Commissione totale</label><input type="number" id="f-comm" step="0.01" oninput="recalc()"></div>
+      </div>
+      <div class="computed-box">
+        <div class="computed-item"><label>Gross P&L</label><div class="cv" id="cv-gross" style="color:var(--sub)">—</div></div>
+        <div class="computed-item"><label>Net P&L</label><div class="cv" id="cv-net" style="color:var(--sub)">—</div></div>
+        <div class="computed-item"><label>R-Multiple</label><div class="cv" id="cv-r" style="color:var(--sub)">—</div></div>
+      </div>
+      <div class="form-group"><label>Note</label><input type="text" id="f-notes" placeholder="Setup, osservazioni..."></div>
+      <button class="submit-btn" id="addTradeBtn" onclick="addTrade()" style="display:none">➕ Registra Operazione</button>
+      <div id="viewerMsg" style="text-align:center;padding:12px;color:var(--dim);font-size:11px">🔒 Accedi come admin per inserire operazioni</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OPERAZIONI ══ -->
+<div class="page" id="page-trades">
+  <div class="panel">
+    <div class="panel-hd">
+      <span class="panel-title">Tutte le Operazioni Chiuse</span>
+      <div style="display:flex;gap:8px">
+        <button class="small-btn" onclick="exportCSV()">⬇ CSV</button>
+        <button class="small-btn danger" id="clearBtn" onclick="clearAll()" style="display:none">🗑 Azzera</button>
+      </div>
+    </div>
+    <div class="t-wrap">
+      <table><thead><tr>
+        <th>#</th><th>Data</th><th>Sym</th><th>Dir</th><th>Size</th>
+        <th>Ticks</th><th>TV</th><th>Gross</th><th>Comm</th><th>Netto</th>
+        <th>Risk</th><th>R-Mult</th><th>Esito</th><th>Note</th><th></th>
+      </tr></thead><tbody id="allBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATISTICHE ══ -->
+<div class="page" id="page-stats">
+  <div class="stats-grid" id="statsKpi"></div>
+  <div class="grid-2">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-hd"><span class="panel-title">Performance per Strumento</span></div>
+      <div class="t-wrap"><table><thead><tr>
+        <th>Sym</th><th>Trade</th><th>Win%</th><th>Netto</th><th>Avg R</th><th>Best</th><th>Worst</th>
+      </tr></thead><tbody id="symBody"></tbody></table></div>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-hd"><span class="panel-title">Distribuzione Esiti</span></div>
+      <canvas id="distCanvas" height="200"></canvas>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-hd"><span class="panel-title">P&L Mensile</span></div>
+    <canvas id="monthCanvas" height="150"></canvas>
+  </div>
+</div>
+
+<!-- ══ IMPOSTAZIONI ══ -->
+<div class="page" id="page-settings">
+  <div class="panel">
+    <div class="section-title">Risk & Valuta</div>
+    <div class="risk-row">
+      <div class="risk-card">
+        <div class="form-group" style="margin-bottom:8px"><label>Risk Fisso per Trade</label>
+          <input type="number" id="s-risk" placeholder="200" step="1" oninput="saveSettings()"></div>
+        <div style="font-size:10px;color:var(--sub)">Usato per calcolare R-Multiple su ogni operazione.</div>
+      </div>
+      <div class="risk-card">
+        <div class="form-group" style="margin-bottom:8px"><label>Valuta</label>
+          <select id="s-currency" onchange="saveSettings()">
+            <option value="$">$ Dollaro (USD)</option>
+            <option value="€">€ Euro (EUR)</option>
+          </select></div>
+        <div style="font-size:10px;color:var(--sub)">Prefisso visualizzato nei valori monetari.</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-card">
+        <div class="form-group" style="margin-bottom:8px"><label>Password Admin</label>
+          <input type="password" id="s-pwd" placeholder="Imposta password..."></div>
+        <button class="small-btn" onclick="setPwd()" style="margin-top:6px">Salva Password</button>
+        <div style="font-size:10px;color:var(--sub);margin-top:6px">Chi apre la dashboard senza password è in modalità viewer (sola lettura).</div>
+      </div>
+      <div class="risk-card">
+        <div style="font-size:11px;color:var(--sub);margin-bottom:8px">
+          <strong style="color:var(--text)">🔗 Link Follower</strong><br><br>
+          Condividi questo file HTML con i tuoi follower.<br>Vedranno le posizioni in tempo reale e riceveranno notifiche push ad ogni apertura/chiusura.
+        </div>
+        <button class="small-btn" onclick="copyLink()">📋 Copia link</button>
+      </div>
+
+    </div>
+  </div>
+  <div class="panel">
+    <div class="section-title">Anagrafica Strumenti
+      <div style="display:flex;gap:8px">
+        <button class="small-btn" onclick="toggleAddInstr()">+ Nuovo</button>
+        <button class="submit-btn" style="max-width:140px;margin-top:0;padding:7px 14px;font-size:11px" onclick="saveInstrGrid()">💾 Salva tutto</button>
+      </div>
+    </div>
+    <div class="instr-grid" id="instrGrid"></div>
+    <div style="margin:10px 0 4px 0">
+      <button class="submit-btn" onclick="saveInstrGrid()" style="max-width:200px;padding:9px 14px;font-size:12px">💾 Salva Anagrafica</button>
+    </div>
+    <div id="addInstrForm" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-top:4px">
+      <div style="font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Nuovo Strumento</div>
+      <div class="form-grid fg4" style="margin-bottom:10px">
+        <div class="form-group"><label>Ticker</label><input type="text" id="ni-name" placeholder="FDAX" style="text-transform:uppercase"></div>
+        <div class="form-group"><label>Tick Value</label><input type="number" id="ni-tv" placeholder="12.50" step="0.01"></div>
+        <div class="form-group"><label>Commissione</label><input type="number" id="ni-comm" placeholder="4.20" step="0.01"></div>
+        <div class="form-group"><label>Categoria</label>
+          <select id="ni-cat"><option>Futures</option><option>ETF</option><option>Forex</option><option>Crypto</option><option>Azioni</option><option>Commodities</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="submit-btn" style="max-width:140px" onclick="addInstrument()">Aggiungi</button>
+        <button class="small-btn" onclick="toggleAddInstr()">Annulla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSE TRADE MODAL (admin) -->
+<div class="modal-overlay" id="closeModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>✅ Chiudi Posizione</span>
+      <span class="modal-sym" id="cm-sym">—</span>
+      <span id="cm-dir-tag" class="tag" style="margin-left:4px">—</span>
+    </div>
+    <div style="font-size:11px;color:var(--sub)" id="cm-opened">Aperta il —</div>
+    <hr class="modal-divider">
+
+    <!-- R REALIZZATA (big display) -->
+    <div class="r-display" id="cm-r-display">
+      <div class="r-number" id="cm-r-number" style="color:var(--sub)">—</div>
+      <div class="r-label">R Realizzata</div>
+      <div class="r-detail">
+        <div class="r-item"><label>Gross P&L</label><div class="rv" id="cm-gross">—</div></div>
+        <div class="r-item"><label>Commissioni</label><div class="rv" id="cm-comm" style="color:var(--red)">—</div></div>
+        <div class="r-item"><label>Net P&L</label><div class="rv" id="cm-net">—</div></div>
+      </div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="form-grid" style="gap:8px;margin-bottom:8px">
+      <div class="form-group">
+        <label>Prezzo Uscita</label>
+        <input type="number" id="cm-exit" step="0.01" oninput="recalcClose()">
+      </div>
+      <div class="form-group">
+        <label>Ticks (calcolati auto)</label>
+        <input type="number" id="cm-ticks" step="1" oninput="recalcCloseFromTicks()">
+      </div>
+    </div>
+    <div class="form-grid" style="gap:8px;margin-bottom:8px">
+      <div class="form-group">
+        <label>Commissione totale</label>
+        <input type="number" id="cm-comm-input" step="0.01" oninput="recalcClose()">
+      </div>
+      <div class="form-group">
+        <label>Note chiusura</label>
+        <input type="text" id="cm-notes" placeholder="TP raggiunto, SL, parziale...">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="submit-btn" onclick="confirmClose()" id="cm-confirm-btn">✅ Conferma e Registra</button>
+      <button class="small-btn" onclick="cancelClose()" style="min-width:90px">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT OVERLAY (per follower) -->
+<div class="alert-overlay" id="alertOverlay">
+  <div class="alert-box">
+    <div class="alert-icon" id="alertIcon">📡</div>
+    <div class="alert-title" id="alertTitle">Nuova Operazione!</div>
+    <div class="alert-sym" id="alertSym">—</div>
+    <div class="alert-sub" id="alertSub">—</div>
+    <!-- Dettagli chiusura (visibili solo per alert close) -->
+    <div id="alertCloseDetails" style="display:none;margin:10px 0;background:var(--bg3);border-radius:8px;padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Entry</div>
+          <div id="alertEntry" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Exit</div>
+          <div id="alertExit" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:8px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px">Net P&L</div>
+          <div id="alertNet" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;text-align:center">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">R Realizzata</div>
+        <div id="alertR" style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:800">—</div>
+      </div>
+    </div>
+    <button class="alert-dismiss" onclick="dismissAlert()">OK, ho visto</button>
+  </div>
+</div>
+
+<!-- GORDON GEKKO AVATAR -->
+<div class="gordon-overlay" id="gordonOverlay">
+  <div class="gordon-svg-wrap" style="position:relative">
+    <img src="data:image/png;base64,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" 
+         style="width:160px;height:180px;object-fit:cover;object-position:top;border-radius:12px;border:2px solid var(--gold);display:block"
+         alt="trader">
+    <!-- Bocca animata invisibile — usata solo per JS -->
+    <svg width="0" height="0" style="position:absolute">
+      <g id="gordonMouth"><path d="M 52 98 Q 65 104 78 98"/></g>
+    </svg>
+
+  </div>
+  <div class="gordon-bubble">
+    <button class="gordon-close" onclick="closeGordon()">✕</button>
+    <div class="gordon-text" id="gordonText">—</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, orderBy, setDoc, getDoc, enableNetwork } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC5V4Kg0SJ5YWOzojVQls5FsYXmTI7MQ7w",
+  authDomain: "tradingdesk-pro.firebaseapp.com",
+  projectId: "tradingdesk-pro",
+  storageBucket: "tradingdesk-pro.firebasestorage.app",
+  messagingSenderId: "651281730162",
+  appId: "1:651281730162:web:47e0091df954b8d42850eb"
+};
+
+const app = initializeApp(firebaseConfig);
+// Cache locale — al reload carica dati istantaneamente dalla cache, poi sincronizza
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache()
+  });
+} catch(e) {
+  db = getFirestore(app);
+}
+
+// ── STATE ──────────────────────────────────────────────────
+// tickSize = dimensione min del tick in punti (es. NQ: 0.25pt/tick, tv: $5/tick)
+// P&L = (diffPunti / tickSize) * tv * size
+const DEFAULT_INSTRUMENTS = [
+  {name:'NQ',    tv:5.00,  tickSize:0.25,   comm:4.20, cat:'Futures'},
+  {name:'ES',    tv:12.50, tickSize:0.25,   comm:4.20, cat:'Futures'},
+  {name:'MNQ',   tv:0.50,  tickSize:0.25,   comm:2.25, cat:'Futures'},
+  {name:'MES',   tv:1.25,  tickSize:0.25,   comm:2.25, cat:'Futures'},
+  {name:'FDAX',  tv:12.50, tickSize:0.50,   comm:4.00, cat:'Futures', currency:'€'},
+  {name:'GC',    tv:10.00, tickSize:0.10,   comm:4.20, cat:'Futures'},
+  {name:'CL',    tv:10.00, tickSize:0.01,   comm:4.20, cat:'Futures'},
+  {name:'QQQ',   tv:1.00,  tickSize:0.01,   comm:0.65, cat:'ETF'},
+  {name:'SPY',   tv:1.00,  tickSize:0.01,   comm:0.65, cat:'ETF'},
+  {name:'EURUSD',tv:10.00, tickSize:0.0001, comm:3.50, cat:'Forex'},
+  {name:'USDJPY',tv:6.50,  tickSize:0.01,   comm:3.50, cat:'Forex'},
+  {name:'BTCUSD',tv:1.00,  tickSize:0.01,   comm:0.05, cat:'Crypto'},
+  {name:'XAUUSD',tv:10.00, tickSize:0.10,   comm:3.00, cat:'Commodities'},
+  {name:'XAGUSD',tv:25.00, tickSize:0.005,  comm:3.00, cat:'Commodities'},
+  {name:'TSLA',  tv:1.00,  tickSize:0.01,   comm:0.65, cat:'Azioni'},
+  {name:'NVDA',  tv:1.00,  tickSize:0.01,   comm:0.65, cat:'Azioni'},
+  {name:'AMD',    tv:1.00,  tickSize:0.01,   comm:0.65, cat:'Azioni'},
+  {name:'IWM',    tv:1.00,  tickSize:0.01,   comm:0.65, cat:'ETF'},
+  {name:'IBUSOIL',tv:1.00,  tickSize:0.01,   comm:0.65, cat:'ETF'},
+];
+
+let instruments = [];
+let settings    = JSON.parse(localStorage.getItem('td_settings') || 'null') || {risk:200,currency:'$',pwd:''};
+
+// Carica strumenti dal localStorage — se non esiste usa i default
+// Le modifiche manuali vengono sempre rispettate
+(function loadInstruments() {
+  const saved = JSON.parse(localStorage.getItem('td_instruments') || 'null');
+  if (saved && saved.length > 0) {
+    const missing = DEFAULT_INSTRUMENTS.filter(d => !saved.find(s => s.name === d.name));
+    instruments = [...saved, ...missing];
+    if (missing.length > 0) localStorage.setItem('td_instruments', JSON.stringify(instruments));
+  } else {
+    instruments = [...DEFAULT_INSTRUMENTS];
+    localStorage.setItem('td_instruments', JSON.stringify(instruments));
+  }
+})();
+let trades        = [];
+let openPositions = [];
+let isAdmin       = false;
+let lastOpenCount = 0;
+// IDs delle posizioni già chiuse localmente — filtrate anche se Firebase le riporta
+const _closedIds  = new Set();
+
+// ── FIREBASE STATUS ────────────────────────────────────────
+// Timeout: se Firebase non risponde in 6s mostra errore ma la UI resta usabile
+let _fbConnected = false;
+const _fbTimeout = setTimeout(() => {
+  if (!_fbConnected) {
+    document.getElementById('fbStatus').textContent = '⚠ Offline';
+    document.getElementById('fbStatus').className   = 'fb-status fb-err';
+  }
+}, 6000);
+
+// Espone le funzioni Firebase al contesto globale
+window._FB = { db, addDoc, collection, deleteDoc, doc };
+
+// ── HELPERS ────────────────────────────────────────────────
+const CUR     = () => settings.currency;
+const symCur  = sym => { const i=instruments.find(x=>x.name===sym); return i?.currency || settings.currency; };
+const fmtSym  = (v, sym, dec=2) => symCur(sym)+(v>=0?'':'-')+Math.abs(v).toFixed(dec);
+const fmt     = (v,dec=2) => CUR()+(v>=0?'':'-')+Math.abs(v).toFixed(dec);
+const fmtR = v => (v>=0?'+':'')+v.toFixed(2)+'R';
+const netV = t => t.gross - t.comm;
+const rMul = t => t.risk>0 ? netV(t)/t.risk : 0;
+const res  = t => { const n=netV(t); return n>0?'WIN':n<0?'LOSS':'BE'; };
+const instr= sym => instruments.find(i=>i.name===sym)||{tv:1,tickSize:1,comm:0,cat:'—'};
+function saveLocal() {
+  localStorage.setItem('td_instruments', JSON.stringify(instruments));
+  localStorage.setItem('td_settings',   JSON.stringify(settings));
+}
+
+function calcStats(arr) {
+  if(!arr.length) return {totalNet:0,totalR:0,winRate:0,wins:0,losses:0,pf:null,avgR:0,avgWin:0,avgLoss:0,dd:0,total:0};
+  const wins=arr.filter(t=>netV(t)>0), losses=arr.filter(t=>netV(t)<0);
+  const totalNet=arr.reduce((a,t)=>a+netV(t),0);
+  const totalR=arr.reduce((a,t)=>a+rMul(t),0);
+  const winRate=wins.length/arr.length;
+  const gWin=wins.reduce((a,t)=>a+netV(t),0);
+  const gLoss=Math.abs(losses.reduce((a,t)=>a+netV(t),0));
+  const pf=gLoss>0?gWin/gLoss:(gWin>0?999:null);
+  const avgWin=wins.length?gWin/wins.length:0;
+  const avgLoss=losses.length?losses.reduce((a,t)=>a+netV(t),0)/losses.length:0;
+  let peak=0,cum=0,dd=0;
+  [...arr].sort((a,b)=>a.date.localeCompare(b.date)||(a.ts-b.ts)).forEach(t=>{cum+=netV(t);if(cum>peak)peak=cum;dd=Math.min(dd,cum-peak);});
+  return {totalNet,totalR,winRate,wins:wins.length,losses:losses.length,pf,avgR:totalR/arr.length,avgWin,avgLoss,dd,total:arr.length};
+}
+function score(s) {
+  if(!s.total) return 0;
+  let sc=Math.min(25,s.winRate*50);
+  sc+=s.pf?Math.min(25,(s.pf/3)*25):0;
+  sc+=Math.min(25,s.avgR>0?s.avgR/2*25:0);
+  const ddr=s.totalNet>0?Math.abs(s.dd)/Math.max(1,s.totalNet+Math.abs(s.dd)):.5;
+  sc+=Math.max(0,25*(1-ddr*2));
+  return Math.min(100,Math.max(0,sc));
+}
+
+// ── PREZZI LIVE (solo per posizioni aperte) ────────────────
+
+async function fetchPriceFull(sym) {
+  const YAHOO_MAP = {
+    'NQ':'NQ=F','ES':'ES=F','MNQ':'MNQ=F','MES':'MES=F',
+    'GC':'GC=F','CL':'CL=F','BTCUSD':'BTC-USD','XAUUSD':'GC=F',
+    'XAGUSD':'SI=F','EURUSD':'EURUSD=X','USDJPY':'USDJPY=X',
+    'QQQ':'QQQ','SPY':'SPY','TSLA':'TSLA','NVDA':'NVDA','AMD':'AMD',
+    'IWM':'IWM','IBUSOIL':'UCO','FDAX':'^GDAXI',
+  };
+  const FINNHUB_KEY = 'd7j4vhpr01qp3g1rqh00d7j4vhpr01qp3g1rqh0g';
+  const FINNHUB_MAP = {
+    'NQ':'NQ1!','ES':'ES1!','MNQ':'MNQ1!','MES':'MES1!',
+    'FDAX':'EUREX:FDAX1!','GC':'GC1!','CL':'CL1!',
+    'XAUUSD':'OANDA:XAU_USD','EURUSD':'OANDA:EUR_USD','USDJPY':'OANDA:USD_JPY',
+    'BTCUSD':'BINANCE:BTCUSDT','SPY':'SPY','QQQ':'QQQ','IWM':'IWM',
+    'IBUSOIL':'UCO','TSLA':'TSLA','NVDA':'NVDA','AMD':'AMD',
+  };
+  // Prova Finnhub
+  try {
+    const tk = FINNHUB_MAP[sym];
+    if (tk) {
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(tk)}&token=${FINNHUB_KEY}`, {signal:AbortSignal.timeout(5000)});
+      if (r.ok) { const d=await r.json(); if(d.c&&d.c!==0) return {price:d.c, prevClose:d.pc, pctChange:d.dp, time:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}; }
+    }
+  } catch {}
+  // Fallback Yahoo
+  try {
+    const tk = YAHOO_MAP[sym];
+    if (tk) {
+      const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d&corsDomain=finance.yahoo.com`, {signal:AbortSignal.timeout(6000)});
+      if (r.ok) { const d=await r.json(); const m=d?.chart?.result?.[0]?.meta; if(m?.regularMarketPrice) { const p=m.regularMarketPrice,pc=m.chartPreviousClose||null; return {price:p, prevClose:pc, pctChange:pc?((p-pc)/pc)*100:null, time:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}; } }
+    }
+  } catch {}
+  return null;
+}
+
+async function updateLivePrices() {
+  if (!openPositions.length) return;
+  const syms = [...new Set(openPositions.map(p=>p.sym))];
+  await Promise.all(syms.map(async sym => {
+    const data = await fetchPriceFull(sym);
+    if (data) livePrices[sym] = data.price;
+  }));
+  renderOpenPositions();
+}
+
+function startPriceUpdates() {
+  if (priceInterval) clearInterval(priceInterval);
+  updateLivePrices();
+  priceInterval = setInterval(updateLivePrices, 30000);
+}
+
+// ── FIRESTORE LISTENERS ────────────────────────────────────
+// Alert listener — notifica tutti i client (follower inclusi)
+const _pageLoadTs = Date.now();
+onSnapshot(query(collection(db,'alerts'), orderBy('ts','desc')), snap => {
+  snap.docChanges().forEach(change => {
+    if (change.type === 'added') {
+      const a = change.doc.data();
+      // Mostra solo alert creati DOPO che questa pagina è stata aperta
+      if (a.ts && a.ts > _pageLoadTs) {
+        showAlert(a.type, a);
+        playBeep(a.type === 'open' ? 880 : (a.rMult >= 0 ? 660 : 330));
+        // Gordon parla a tutti i browser connessi
+        gordonSpeak(buildGordonText(a.type, a));
+      }
+    }
+  });
+});
+
+// Closed trades
+onSnapshot(query(collection(db,'trades'), orderBy('ts','desc')), snap => {
+  // Firebase connesso!
+  if (!_fbConnected) {
+    _fbConnected = true;
+    clearTimeout(_fbTimeout);
+    document.getElementById('fbStatus').textContent = '✓ Firebase';
+    document.getElementById('fbStatus').className   = 'fb-status fb-ok';
+  }
+  trades = snap.docs.map(d=>({...d.data(), _id:d.id}));
+  renderAll();
+});
+
+// Open positions
+onSnapshot(query(collection(db,'openPositions'), orderBy('ts','desc')), snap => {
+  const prev = openPositions.length;
+  // Filtra posizioni già chiuse localmente (evita che Firebase le rimetta)
+  openPositions = snap.docs
+    .map(d=>({...d.data(), _id:d.id}))
+    .filter(p => !_closedIds.has(p._id));
+
+  // Alert per follower quando cambia numero posizioni
+  if (!isAdmin && openPositions.length !== lastOpenCount) {
+    const added = openPositions.length > lastOpenCount;
+    if (added) {
+      // Non mostrare alert qui — lo gestisce il listener della collezione alerts
+    }
+  }
+  lastOpenCount = openPositions.length;
+  document.getElementById('openCount').textContent = openPositions.length+' posizion'+(openPositions.length===1?'e':'i');
+  renderOpenPositions();
+  startPriceUpdates();
+});
+
+// ── ADMIN AUTH ─────────────────────────────────────────────
+window.adminLogin = function() {
+  const pwd = document.getElementById('adminPwd').value;
+  if (pwd && pwd === settings.pwd) {
+    isAdmin = true;
+    document.getElementById('adminLock').style.display = 'none';
+    document.getElementById('addOpenBtn').style.display = 'inline-block';
+    document.getElementById('addTradeBtn').style.display = 'block';
+    document.getElementById('viewerMsg').style.display  = 'none';
+    document.getElementById('clearBtn').style.display   = 'inline-block';
+    document.getElementById('modeIndicator').textContent = '🔑 Admin';
+    document.getElementById('modeIndicator').style.color = 'var(--gold)';
+    toast('✓ Modalità admin attivata');
+  } else {
+    toast('Password errata!', true);
+  }
+}
+
+window.setPwd = function() {
+  const p = document.getElementById('s-pwd').value;
+  if (!p) { toast('Inserisci una password!', true); return; }
+  settings.pwd = p; saveLocal(); toast('✓ Password salvata');
+}
+
+// ── OPEN POSITIONS ─────────────────────────────────────────
+window.showAddOpen = () => {
+  document.getElementById('openPosForm').style.display='block';
+  // Imposta valori default
+  const riskEl = document.getElementById('op-risk-cash');
+  const rrEl   = document.getElementById('op-rr-cash');
+  if (riskEl && !riskEl.value) riskEl.value = settings.risk || 200;
+  if (rrEl   && !rrEl.value)   rrEl.value   = 4;
+  onOpSymChange();
+};
+window.hideAddOpen = () => { document.getElementById('openPosForm').style.display='none'; };
+
+window.onOpSymChange = function() {
+  const sym = document.getElementById('op-sym').value;
+  const ins = instr(sym);
+  // Per azioni/ETF: se tv < 0.5 usa 1.00 (valore corretto = $1/punto per azione)
+  // Per futures: usa il valore dall'anagrafica
+  const tvCorrect = (ins.cat==='Azioni'||ins.cat==='ETF') && ins.tv < 0.5 ? 1.00 : ins.tv;
+  document.getElementById('op-tv').value = tvCorrect.toFixed(2);
+  const curLbl = document.getElementById('op-tv-cur');
+  if (curLbl) curLbl.textContent = ins.currency || CUR();
+  // Aggiorna label size nel modo prezzo con il risk corrente
+  const riskLbl = document.querySelector('#sl-price-inputs .form-group:first-child label');
+  if (riskLbl) riskLbl.textContent = 'Size (calcolata — max risk ' + CUR() + settings.risk + ')';
+  calcOpPnl();
+};
+
+window.onSlModeChange = function() {}; // non usato, modalità unica
+
+window.calcOpPnl = function() {
+  const sym    = document.getElementById('op-sym').value;
+  const ins    = instr(sym);
+  const tv     = parseFloat(document.getElementById('op-tv').value) || ins.tv || 1;
+  const tickSz = ins.tickSize || 1;
+  const dir    = document.getElementById('op-dir').value;
+  const maxRisk= settings.risk || 200;
+  const el     = id => document.getElementById(id);
+  const setRO  = (id, val, dec=2) => { if(el(id)) el(id).value = val!==null?(typeof val==='number'?val.toFixed(dec):val):''; };
+
+  // Aggiorna label max risk
+  const lbl = document.getElementById('op-maxrisk-lbl');
+  if (lbl) lbl.textContent = CUR()+maxRisk;
+
+
+
+  // ── SL DI PREZZO ──
+  const entry = parseFloat(el('op-entry-price').value) || 0;
+  const sl    = parseFloat(el('op-sl-price').value)    || 0;
+  const tp    = parseFloat(el('op-tp-price').value)    || 0;
+
+  if (!entry || !sl) {
+    el('op-risk-val').textContent='—'; el('op-tp-val').textContent='—';
+    el('op-rr-val').textContent='—';   el('op-size-val').textContent='—';
+    setRO('op-size-price', null); setRO('op-risk-price', null);
+    return;
+  }
+  const slPunti  = dir==='LONG' ? entry-sl : sl-entry;
+  const slTicks  = slPunti / tickSz;
+  const riskPer1 = slTicks * tv;
+  const size     = riskPer1>0 ? Math.floor(maxRisk/riskPer1) || 1 : 1;
+  const riskEff  = size * riskPer1;
+  const tpPunti  = tp ? (dir==='LONG' ? tp-entry : entry-tp) : 0;
+  const tpTicks  = tpPunti / tickSz;
+  const tpVal    = tpTicks * tv * size;
+  const rr       = riskEff>0 && tpVal>0 ? tpVal/riskEff : 0;
+  setRO('op-size-price',  size, 0);
+  setRO('op-risk-price',  riskEff);
+  const sCur = symCur(sym);
+  el('op-risk-val').textContent = sCur+(riskEff>=0?'':'-')+Math.abs(riskEff).toFixed(2);
+  el('op-tp-val').textContent   = tp ? sCur+(tpVal>=0?'':'-')+Math.abs(tpVal).toFixed(2) : '—';
+  el('op-rr-val').textContent   = rr ? '1:'+rr.toFixed(2) : '—';
+  el('op-size-val').textContent = size + (ins.cat==='Futures'?' contratto':'  pezzi');
+};
+
+window.openPosition = async function() {
+  if (!isAdmin) return;
+  const sym  = document.getElementById('op-sym').value;
+  const dir  = document.getElementById('op-dir').value;
+  const tv   = parseFloat(document.getElementById('op-tv').value)||instr(sym).tv;
+  const notes= document.getElementById('op-notes').value;
+  const entry = parseFloat(document.getElementById('op-entry-price').value);
+  const sl    = parseFloat(document.getElementById('op-sl-price').value)  || null;
+  const tp    = parseFloat(document.getElementById('op-tp-price').value)  || null;
+  const size  = parseFloat(document.getElementById('op-size-price').value)|| 1;
+  if (!entry) { toast('Inserisci il prezzo di entrata!',true); return; }
+  const ins3 = instr(sym);
+  await addDoc(collection(db,'openPositions'), {
+    sym, dir, size, entry, sl, tp, tv,
+    tickSize: ins3.tickSize || 1,
+    notes, ts: Date.now(), openedAt: new Date().toISOString()
+  });
+  // Pubblica alert apertura su Firestore — il listener lo mostrerà a TUTTI
+  try {
+    await addDoc(collection(db,'alerts'), {
+      type: 'open',
+      sym, dir,
+      entry: entry || null,
+      sl:    sl    || null,
+      tp:    tp    || null,
+      notes: notes || '',
+      ts:    Date.now()
+    });
+  } catch(e) {
+    // Solo se Firebase fallisce, mostra localmente
+    showAlert('open', {sym, dir, entry, notes});
+    playBeep(880);
+  }
+
+  hideAddOpen();
+  toast('📡 Posizione aperta e pubblicata!');
+  playBeep(660);
+};
+
+// Posizione corrente da chiudere (tenuta in memoria durante il modale)
+let _closingPos = null;
+
+window.closePosition = function(id) {
+  if (!isAdmin) return;
+  const pos = openPositions.find(p=>p._id===id);
+  if (!pos) return;
+  _closingPos = pos;
+  const ins = instr(pos.sym);
+  const comm = (ins.comm * pos.size * 2).toFixed(2);
+  const lp   = livePrices[pos.sym] || null;
+
+  // Popola modale
+  document.getElementById('cm-sym').textContent = pos.sym;
+  const dirTag = document.getElementById('cm-dir-tag');
+  dirTag.textContent = pos.dir;
+  dirTag.className = 'tag ' + (pos.dir==='LONG'?'tag-long':'tag-short');
+  document.getElementById('cm-opened').textContent =
+    'Entry: ' + (pos.entry?.toFixed(2)||'—') +
+    (pos.sl ? '  |  SL: '+pos.sl.toFixed(2) : '') +
+    (pos.tp ? '  |  TP: '+pos.tp.toFixed(2) : '') +
+    '  |  Size: '+pos.size;
+  document.getElementById('cm-exit').value = lp ? lp.toFixed(2) : '';
+  document.getElementById('cm-comm-input').value = comm;
+  document.getElementById('cm-notes').value = '';
+
+  // Reset display
+  ['cm-r-number','cm-gross','cm-net'].forEach(id=>{
+    document.getElementById(id).textContent='—';
+  });
+  document.getElementById('cm-comm').textContent = '-'+CUR()+comm;
+
+  document.getElementById('closeModal').classList.add('show');
+  recalcClose();
+};
+
+window.recalcClose = function() {
+  const pos  = _closingPos; if(!pos) return;
+  const ins  = instr(pos.sym);
+  const tickSz = pos.tickSize || ins.tickSize || 1;
+  const tv   = pos.tv || ins.tv || 1;
+  const size = pos.size || 1;
+  const exit = parseFloat(document.getElementById('cm-exit').value);
+  const comm = parseFloat(document.getElementById('cm-comm-input').value)||0;
+  const risk = settings.risk;
+
+  if (!exit || !pos.entry) {
+    document.getElementById('cm-ticks').value = '';
+    return;
+  }
+
+  const diffPt = pos.dir==='LONG' ? exit-pos.entry : pos.entry-exit;
+  const ticks  = Math.round(diffPt / tickSz);
+  const gross  = ticks * tv * size;
+  const net    = gross - comm;
+  const rMult  = risk > 0 ? net/risk : 0;
+
+  document.getElementById('cm-ticks').value = ticks;
+  updateCloseDisplay(gross, net, comm, rMult);
+};
+
+window.recalcCloseFromTicks = function() {
+  const pos  = _closingPos; if(!pos) return;
+  const ins  = instr(pos.sym);
+  const tickSz = pos.tickSize || ins.tickSize || 1;
+  const tv   = pos.tv || ins.tv || 1;
+  const size = pos.size || 1;
+  const ticks= parseFloat(document.getElementById('cm-ticks').value)||0;
+  const comm = parseFloat(document.getElementById('cm-comm-input').value)||0;
+  const risk = settings.risk;
+  const gross= ticks * tv * size;
+  const net  = gross - comm;
+  const rMult= risk>0 ? net/risk : 0;
+  // Aggiorna anche exit price
+  if (pos.entry) {
+    const exitPt = pos.dir==='LONG'
+      ? pos.entry + ticks*tickSz
+      : pos.entry - ticks*tickSz;
+    document.getElementById('cm-exit').value = exitPt.toFixed(2);
+  }
+  updateCloseDisplay(gross, net, comm, rMult);
+};
+
+function updateCloseDisplay(gross, net, comm, rMult) {
+  const rEl  = document.getElementById('cm-r-number');
+  const gEl  = document.getElementById('cm-gross');
+  const nEl  = document.getElementById('cm-net');
+  const cEl  = document.getElementById('cm-comm');
+  const disp = document.getElementById('cm-r-display');
+
+  const color = rMult > 0 ? 'var(--green)' : rMult < 0 ? 'var(--red)' : 'var(--sub)';
+  rEl.textContent = (rMult>=0?'+':'')+rMult.toFixed(2)+'R';
+  rEl.style.color = color;
+  disp.style.borderColor = rMult>0?'var(--green)':rMult<0?'var(--red)':'var(--border)';
+  gEl.textContent = (gross>=0?'+':'')+fmt(gross);
+  gEl.style.color = gross>=0?'var(--green)':'var(--red)';
+  nEl.textContent = (net>=0?'+':'')+fmt(net);
+  nEl.style.color = net>=0?'var(--green)':'var(--red)';
+  nEl.style.fontWeight = '800';
+  cEl.textContent = '-'+fmt(comm);
+}
+
+window.confirmClose = async function() {
+  const dbg = s => { toast(s, s.startsWith('❌')); };
+
+  const pos = _closingPos;
+  if (!pos) { dbg('❌ Errore: _closingPos null'); return; }
+  dbg('⏳ 1/4 Posizione trovata: ' + pos.sym);
+
+  const ins    = instr(pos.sym);
+  const tickSz = pos.tickSize || ins.tickSize || 1;
+  const tv     = pos.tv || ins.tv || 1;
+  const ticks  = parseFloat(document.getElementById('cm-ticks').value);
+  const comm   = parseFloat(document.getElementById('cm-comm-input').value)||0;
+  const notes  = document.getElementById('cm-notes').value;
+  const exit   = parseFloat(document.getElementById('cm-exit').value);
+
+  if (isNaN(ticks)) { dbg('❌ Ticks non validi — inserisci il prezzo di uscita'); return; }
+
+  const gross = ticks * tv * pos.size;
+  const net   = gross - comm;
+  const rMult = settings.risk > 0 ? net / settings.risk : 0;
+  dbg('⏳ 2/4 Calcoli OK — Net: ' + net.toFixed(2) + ' R: ' + rMult.toFixed(2));
+
+  if (!window._FB) { dbg('❌ Firebase non pronto — ricarica la pagina'); return; }
+  const {db:_db, addDoc:_add, collection:_col, deleteDoc:_del, doc:_doc} = window._FB;
+
+  // Helper: Promise con timeout
+  const withTimeout = (promise, ms, label) =>
+    Promise.race([
+      promise,
+      new Promise((_,reject) => setTimeout(()=>reject(new Error(label+' timeout dopo '+ms+'ms')), ms))
+    ]);
+
+  const tradeData = {
+    date: new Date().toISOString().slice(0,10),
+    sym: pos.sym, dir: pos.dir,
+    size: pos.size, ticks, tv,
+    gross, comm, risk: settings.risk,
+    notes: notes || pos.notes || '',
+    entryPrice: pos.entry, exitPrice: exit,
+    ts: Date.now()
+  };
+
+  // Funzione che pulisce UI — eseguita sempre, successo o errore
+  function closeAndClean(msg, isErr) {
+    _closedIds.add(pos._id); // impedisce che Firebase rimetta la posizione
+    openPositions = openPositions.filter(p => p._id !== pos._id);
+    lastOpenCount = openPositions.length;
+    document.getElementById('openCount').textContent =
+      openPositions.length + ' posizion' + (openPositions.length===1?'e':'i');
+    renderOpenPositions();
+    document.getElementById('closeModal').classList.remove('show');
+    _closingPos = null;
+    toast(msg, isErr||false);
+  }
+
+  try {
+    dbg('⏳ 3/4 Salvataggio trade...');
+    await withTimeout(_add(_col(_db, 'trades'), tradeData), 8000, 'addDoc');
+    dbg('⏳ 4/4 Rimozione posizione da Firebase...');
+    await withTimeout(_del(_doc(_db, 'openPositions', pos._id)), 8000, 'deleteDoc');
+    // Salva alert su Firestore — il listener lo mostrerà a TUTTI i browser connessi
+    try {
+      await _add(_col(_db, 'alerts'), {
+        type: 'close',
+        sym: pos.sym, dir: pos.dir,
+        entry: pos.entry, exitPrice: exit,
+        rMult, net, notes: pos.notes||'',
+        ts: Date.now()
+      });
+    } catch(e) { /* non bloccante */ }
+    closeAndClean('✅ ' + pos.sym + ' chiuso: ' + (rMult>=0?'+':'') + rMult.toFixed(2) + 'R — ' + fmt(net));
+  } catch(e) {
+    // Firebase lento o offline — salva backup locale ma chiudi UI ugualmente
+    const backup = JSON.parse(localStorage.getItem('td_trades_backup')||'[]');
+    backup.push(tradeData);
+    localStorage.setItem('td_trades_backup', JSON.stringify(backup));
+    closeAndClean('⚠️ ' + pos.sym + ' chiuso localmente (Firebase: ' + e.message + ')');
+  }
+};
+
+window.cancelClose = function() {
+  document.getElementById('closeModal').classList.remove('show');
+  _closingPos = null;
+};
+
+// ── RENDER OPEN POSITIONS ──────────────────────────────────
+function renderOpenPositions() {
+  const grid = document.getElementById('posGrid');
+  if (!grid) return;
+  if (!openPositions.length) {
+    grid.innerHTML = '<div class="no-pos">Nessuna posizione aperta</div>';
+    return;
+  }
+  // Render minimalissimo — debug
+  grid.innerHTML = openPositions.map((pos, idx) => {
+    try {
+      const ins      = instr(pos.sym) || {tv:1, tickSize:1, comm:0, cat:'Azioni', currency:''};
+      const dir      = String(pos.dir || 'LONG');
+      const tv       = (ins.cat==='Azioni'||ins.cat==='ETF') && (pos.tv||1) < 0.5 ? 1 : (pos.tv || ins.tv || 1);
+      const size     = Number(pos.size) || 1;
+      const entry    = Number(pos.entry) || 0;
+      const sl       = Number(pos.sl)    || 0;
+      const tp       = Number(pos.tp)    || 0;
+      const sym      = String(pos.sym || '?');
+      const notes    = String(pos.notes || '');
+      const cardClass= dir==='LONG' ? 'long-card' : 'short-card';
+      const closeBtn = isAdmin ? '<button class="close-pos-btn" onclick="closePosition(''+pos._id+'')">✕ Chiudi</button>' : '';
+
+      return '<div class="pos-card '+cardClass+'">'
+        + '<div class="pos-header">'
+        + '<span class="pos-sym">'+sym+'</span>'
+        + '<div style="display:flex;gap:6px;align-items:center">'
+        + '<span class="pos-dir '+dir.toLowerCase()+'">'+dir+'</span>'
+        + '<span style="font-size:10px;color:var(--sub)">'+size+' pz</span>'
+        + '</div></div>'
+        + '<div class="pos-price-row">'
+        + '<div class="pos-price-item"><label>Entry</label><div class="ppv">'+entry.toFixed(2)+'</div></div>'
+        + '<div class="pos-price-item"><label>SL</label><div class="ppv" style="color:var(--red)">'+( sl ? sl.toFixed(2) : '—' )+'</div></div>'
+        + '<div class="pos-price-item"><label>TP</label><div class="ppv" style="color:var(--green)">'+( tp ? tp.toFixed(2) : '—' )+'</div></div>'
+        + '</div>'
+        + '<div class="pos-footer"><div>'
+        + '<div style="font-size:11px;color:var(--sub)">'+notes+'</div>'
+        + '</div>'+closeBtn+'</div>'
+        + '</div>';
+    } catch(e) {
+      return '<div class="pos-card" style="border:1px solid var(--red);padding:12px;color:var(--red);font-size:11px">ERRORE: '+e.message+'</div>';
+    }
+  }).join('');
+}
+
+
+// ── ADD CLOSED TRADE ───────────────────────────────────────
+window.addTrade = async function() {
+  if (!isAdmin) return;
+  const date  = document.getElementById('f-date').value;
+  const sym   = document.getElementById('f-sym').value;
+  const dir   = document.getElementById('f-dir').value;
+  const size  = parseFloat(document.getElementById('f-size').value)||1;
+  const ticks = parseFloat(document.getElementById('f-ticks').value);
+  const tv    = parseFloat(document.getElementById('f-tv').value)||instr(sym).tv;
+  const comm  = parseFloat(document.getElementById('f-comm').value)||0;
+  const notes = document.getElementById('f-notes').value;
+  if (!date) { toast('Inserisci la data!',true); return; }
+  if (!ticks&&ticks!==0) { toast('Inserisci i ticks!',true); return; }
+  const gross = ticks * tv * size;
+  await addDoc(collection(db,'trades'), {date,sym,dir,size,ticks,tv,gross,comm,risk:settings.risk,notes,ts:Date.now()});
+  document.getElementById('f-ticks').value='';
+  document.getElementById('f-notes').value='';
+  ['cv-gross','cv-net','cv-r'].forEach(id=>{const e=document.getElementById(id);e.textContent='—';e.style.color='var(--sub)';});
+  toast('✓ Trade registrato su Firebase!');
+};
+
+window.deleteTrade = async function(id) {
+  if (!isAdmin) return;
+  if (!confirm('Eliminare?')) return;
+  await deleteDoc(doc(db,'trades',id));
+  toast('Eliminato');
+};
+
+window.clearAll = async function() {
+  if (!isAdmin) return;
+  if (!confirm('Eliminare TUTTI i trade? Irreversibile.')) return;
+  for (const t of trades) await deleteDoc(doc(db,'trades',t._id));
+  toast('Dati azzerati');
+};
+
+// ── FORM HELPERS ───────────────────────────────────────────
+window.onSymChange = function() {
+  const sym = document.getElementById('f-sym').value;
+  const ins = instr(sym);
+  document.getElementById('f-tv').value = ins.tv.toFixed(2);
+  const size = parseFloat(document.getElementById('f-size').value)||1;
+  document.getElementById('f-comm').value = (ins.comm*size*2).toFixed(2);
+  recalc();
+};
+
+window.recalc = function() {
+  const ticks=parseFloat(document.getElementById('f-ticks').value)||0;
+  const size =parseFloat(document.getElementById('f-size').value)||1;
+  const tv   =parseFloat(document.getElementById('f-tv').value)||0;
+  const comm =parseFloat(document.getElementById('f-comm').value)||0;
+  const gross=ticks*tv*size, n=gross-comm, rm=settings.risk>0?n/settings.risk:0;
+  const gEl=document.getElementById('cv-gross'),nEl=document.getElementById('cv-net'),rEl=document.getElementById('cv-r');
+  gEl.textContent=ticks?fmt(gross):'—'; gEl.style.color=gross>0?'var(--green)':gross<0?'var(--red)':'var(--sub)';
+  nEl.textContent=ticks?fmt(n):'—';     nEl.style.color=n>0?'var(--green)':n<0?'var(--red)':'var(--sub)';
+  rEl.textContent=ticks?fmtR(rm):'—';   rEl.style.color=rm>0?'var(--gold)':rm<0?'var(--red)':'var(--sub)';
+};
+
+function renderForm() {
+  const opts = instruments.map(i=>`<option value="${i.name}">${i.name} — ${i.cat}</option>`).join('');
+  document.getElementById('f-sym').innerHTML  = opts;
+  document.getElementById('op-sym').innerHTML = opts;
+  onSymChange(); onOpSymChange();
+}
+
+// ── RENDER KPIs ────────────────────────────────────────────
+function renderKPIs() {
+  const s=calcStats(trades), sc=score(s);
+  document.getElementById('topPnl').textContent='P&L: '+(s.totalNet>=0?'+':'')+fmt(s.totalNet);
+  document.getElementById('kpiRow').innerHTML=[
+    {l:'Net P&L',       v:fmt(s.totalNet),               f:fmtR(s.totalR)+' totali',       c:s.totalNet>=0?'var(--green)':'var(--red)'},
+    {l:'Win Rate',      v:(s.winRate*100).toFixed(1)+'%', f:s.wins+'W / '+s.losses+'L',     c:'var(--blue)'},
+    {l:'Profit Factor', v:s.pf!=null?(s.pf>=999?'∞':s.pf.toFixed(2)):'—', f:'Win/Loss ratio', c:(s.pf||0)>=1.5?'var(--purple)':'var(--red)'},
+    {l:'Avg R-Multiple',v:fmtR(s.avgR),                  f:'Risk: '+fmt(settings.risk,0),  c:s.avgR>=0?'var(--gold)':'var(--red)'},
+    {l:'Max Drawdown',  v:fmt(s.dd),                     f:s.total+' trade totali',         c:'var(--red)'},
+  ].map((k,i)=>`<div class="kpi" style="--kpi-color:${k.c};animation-delay:${i*.05}s">
+    <div class="kpi-label">${k.l}</div>
+    <div class="kpi-val" style="color:${k.c}">${k.v}</div>
+    <div class="kpi-foot">${k.f}</div>
+  </div>`).join('');
+  document.getElementById('scoreNum').textContent=sc.toFixed(0);
+  document.getElementById('scoreFill').style.width=sc+'%';
+  document.getElementById('eqBadge').textContent=trades.length+' trade';
+  document.getElementById('recentBadge').textContent=trades.length;
+}
+
+// ── RENDER TABLES ──────────────────────────────────────────
+function trRow(t,idx,full=false) {
+  const n=netV(t),rm=rMul(t),r=res(t);
+  const rT=r==='WIN'?'tag-win':r==='LOSS'?'tag-loss':'tag-be';
+  const dT=t.dir==='LONG'?'tag-long':'tag-short';
+  return `<tr>
+    <td style="color:var(--dim)">${idx}</td>
+    <td style="color:var(--sub)">${t.date?.slice(5).replace('-','/')}</td>
+    <td style="font-weight:700">${t.sym}</td>
+    <td><span class="tag ${dT}">${t.dir}</span></td>
+    ${full?`<td>${t.size}</td>`:''}
+    <td style="color:${t.ticks>0?'var(--green)':t.ticks<0?'var(--red)':'var(--sub)'}">${t.ticks>0?'+':''}${t.ticks}</td>
+    ${full?`<td style="color:var(--sub)">${CUR()}${t.tv}</td>`:''}
+    <td style="color:${t.gross>=0?'var(--green)':'var(--red)'}">${fmt(t.gross)}</td>
+    ${full?`<td style="color:var(--sub)">${fmt(t.comm)}</td>`:''}
+    <td style="color:${n>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(n)}</td>
+    ${full?`<td style="color:var(--sub)">${fmt(t.risk,0)}</td>`:''}
+    <td style="color:${rm>=0?'var(--gold)':'var(--red)'};font-weight:700">${fmtR(rm)}</td>
+    <td><span class="tag ${rT}">${r}</span></td>
+    ${full?`<td style="color:var(--sub);max-width:100px;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</td>`:''}
+    ${full&&isAdmin?`<td><button class="del-btn" onclick="deleteTrade('${t._id}')">✕</button></td>`:'<td></td>'}
+  </tr>`;
+}
+
+function renderTables() {
+  const sorted=[...trades].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const rb=document.getElementById('recentBody');
+  rb.innerHTML=sorted.length?sorted.slice(0,12).map((t,i)=>trRow(t,sorted.length-i,false)).join(''):'<tr><td colspan="9" class="empty-state">Nessun trade ancora</td></tr>';
+  const ab=document.getElementById('allBody');
+  ab.innerHTML=sorted.length?sorted.map((t,i)=>trRow(t,sorted.length-i,true)).join(''):'<tr><td colspan="15" class="empty-state">Nessun trade</td></tr>';
+}
+
+// ── EQUITY CHART ───────────────────────────────────────────
+function renderEquity() {
+  const canvas=document.getElementById('eqCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-36, H=160;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  const sorted=[...trades].sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(sorted.length<2){ctx.fillStyle='rgba(107,122,153,.3)';ctx.font='12px Syne';ctx.textAlign='center';ctx.fillText('Aggiungi almeno 2 operazioni',W/2,H/2);return;}
+  let cum=0; const pts=[0,...sorted.map(t=>{cum+=netV(t);return cum;})];
+  const minV=Math.min(...pts),maxV=Math.max(...pts),range=Math.max(Math.abs(maxV-minV),1);
+  const pad={l:54,r:14,t:12,b:26};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const xOf=i=>pad.l+(i/(pts.length-1))*cW;
+  const yOf=v=>pad.t+cH-((v-minV)/range)*cH;
+  ctx.strokeStyle='rgba(37,45,61,.8)';ctx.lineWidth=.5;
+  for(let i=0;i<=4;i++){const y=pad.t+(i/4)*cH;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();const v=maxV-(i/4)*range;ctx.fillStyle='rgba(107,122,153,.7)';ctx.font='8px JetBrains Mono';ctx.textAlign='right';ctx.fillText((v>=0?'+':'')+v.toFixed(0),pad.l-5,y+3);}
+  const lastVal=pts[pts.length-1];
+  const grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  if(lastVal>=0){grad.addColorStop(0,'rgba(0,212,170,.3)');grad.addColorStop(1,'rgba(0,212,170,.02)');}
+  else{grad.addColorStop(0,'rgba(255,77,106,.02)');grad.addColorStop(1,'rgba(255,77,106,.3)');}
+  ctx.beginPath();ctx.moveTo(xOf(0),yOf(0));pts.forEach((v,i)=>ctx.lineTo(xOf(i),yOf(v)));ctx.lineTo(xOf(pts.length-1),yOf(0));ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.strokeStyle=lastVal>=0?'#00D4AA':'#FF4D6A';ctx.lineWidth=2;ctx.lineJoin='round';pts.forEach((v,i)=>{i===0?ctx.moveTo(xOf(i),yOf(v)):ctx.lineTo(xOf(i),yOf(v));});ctx.stroke();
+  const lx=xOf(pts.length-1),ly=yOf(lastVal);ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle=lastVal>=0?'#00D4AA':'#FF4D6A';ctx.fill();ctx.strokeStyle='#0A0E14';ctx.lineWidth=2;ctx.stroke();
+}
+
+// ── RADAR ──────────────────────────────────────────────────
+function renderRadar() {
+  const canvas=document.getElementById('radarCanvas');
+  const dpr=window.devicePixelRatio||1,sz=220;
+  canvas.width=sz*dpr;canvas.height=180*dpr;canvas.style.width=sz+'px';canvas.style.height='180px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const cx=sz/2,cy=90,R=68;
+  const labels=['Win%','Prof.F','Avg W/L','Recovery','Consist.'];
+  const s=calcStats(trades);
+  const metrics=[Math.min(1,s.winRate*2),Math.min(1,(s.pf||0)/3),Math.min(1,s.avgR>0?s.avgR/2:0),Math.min(1,s.totalNet>0&&s.dd<0?Math.max(0,1-Math.abs(s.dd)/s.totalNet):.5),Math.min(1,trades.length>=10?1:trades.length/10)];
+  const N=labels.length,angles=labels.map((_,i)=>(i/N)*Math.PI*2-Math.PI/2);
+  for(let r=1;r<=4;r++){ctx.beginPath();angles.forEach((a,i)=>{const x=cx+Math.cos(a)*(R*r/4),y=cy+Math.sin(a)*(R*r/4);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.strokeStyle='rgba(37,45,61,.9)';ctx.lineWidth=1;ctx.stroke();}
+  angles.forEach(a=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle='rgba(37,45,61,.9)';ctx.lineWidth=1;ctx.stroke();});
+  ctx.beginPath();angles.forEach((a,i)=>{const x=cx+Math.cos(a)*R*metrics[i],y=cy+Math.sin(a)*R*metrics[i];i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='rgba(0,212,170,.12)';ctx.fill();ctx.strokeStyle='#00D4AA';ctx.lineWidth=1.5;ctx.stroke();
+  angles.forEach((a,i)=>{ctx.beginPath();ctx.arc(cx+Math.cos(a)*R*metrics[i],cy+Math.sin(a)*R*metrics[i],3,0,Math.PI*2);ctx.fillStyle='#00D4AA';ctx.fill();});
+  ctx.font='9px Syne';ctx.fillStyle='rgba(107,122,153,.9)';ctx.textAlign='center';
+  angles.forEach((a,i)=>ctx.fillText(labels[i],cx+Math.cos(a)*(R+16),cy+Math.sin(a)*(R+16)+3));
+}
+
+// ── STATS ─────────────────────────────────────────────────
+function renderStats() {
+  const s=calcStats(trades),sc=score(s);
+  document.getElementById('statsKpi').innerHTML=[
+    {l:'Trade Totali',v:trades.length,f:'chiuse',c:'var(--blue)'},
+    {l:'Win Rate',v:(s.winRate*100).toFixed(1)+'%',f:s.wins+'W / '+s.losses+'L',c:'var(--green)'},
+    {l:'Avg Win',v:fmt(s.avgWin),f:'per trade vincente',c:'var(--green)'},
+    {l:'Avg Loss',v:fmt(s.avgLoss),f:'per trade in perdita',c:'var(--red)'},
+    {l:'Best Trade',v:trades.length?fmt(Math.max(...trades.map(netV))):'—',f:'',c:'var(--green)'},
+    {l:'Worst Trade',v:trades.length?fmt(Math.min(...trades.map(netV))):'—',f:'',c:'var(--red)'},
+    {l:'Tot. Commissioni',v:trades.length?fmt(trades.reduce((a,t)=>a+t.comm,0)):'—',f:'pagate',c:'var(--gold)'},
+    {l:'Score',v:sc.toFixed(0)+'/100',f:'complessivo',c:'var(--purple)'},
+  ].map(k=>`<div class="kpi" style="--kpi-color:${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="color:${k.c}">${k.v}</div><div class="kpi-foot">${k.f}</div></div>`).join('');
+  const syms=[...new Set(trades.map(t=>t.sym))].sort();
+  document.getElementById('symBody').innerHTML=syms.map(sym=>{
+    const st=calcStats(trades.filter(t=>t.sym===sym));
+    const ns=trades.filter(t=>t.sym===sym).map(netV);
+    return `<tr><td style="font-weight:700">${sym}</td><td>${st.total}</td><td style="color:${st.winRate>=.5?'var(--green)':'var(--red)'}">${(st.winRate*100).toFixed(0)}%</td><td style="color:${st.totalNet>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(st.totalNet)}</td><td style="color:var(--gold)">${fmtR(st.avgR)}</td><td style="color:var(--green)">${fmt(Math.max(...ns))}</td><td style="color:var(--red)">${fmt(Math.min(...ns))}</td></tr>`;
+  }).join('');
+  renderDist(); renderMonth();
+}
+
+function renderDist() {
+  const canvas=document.getElementById('distCanvas');
+  const dpr=window.devicePixelRatio||1,W=canvas.parentElement.clientWidth-36,H=200;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  if(!trades.length)return;
+  const data=[{label:'WIN',count:trades.filter(t=>res(t)==='WIN').length,color:'#00D4AA'},{label:'LOSS',count:trades.filter(t=>res(t)==='LOSS').length,color:'#FF4D6A'},{label:'BE',count:trades.filter(t=>res(t)==='BE').length,color:'#6B7A99'}];
+  const total=trades.length;let sa=-Math.PI/2;
+  const cx=W/2,cy=H/2-8,r=Math.min(cx,cy)-24;
+  data.forEach(d=>{if(!d.count)return;const angle=(d.count/total)*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,sa,sa+angle);ctx.closePath();ctx.fillStyle=d.color;ctx.fill();ctx.strokeStyle='var(--bg2)';ctx.lineWidth=2;ctx.stroke();const ma=sa+angle/2;ctx.fillStyle='rgba(10,14,20,.9)';ctx.font='bold 11px Syne';ctx.textAlign='center';ctx.fillText((d.count/total*100).toFixed(0)+'%',cx+Math.cos(ma)*r*.65,cy+Math.sin(ma)*r*.65+4);sa+=angle;});
+  ctx.beginPath();ctx.arc(cx,cy,r*.55,0,Math.PI*2);ctx.fillStyle='var(--bg2)';ctx.fill();
+  ctx.fillStyle='var(--text)';ctx.font='bold 14px JetBrains Mono';ctx.textAlign='center';ctx.fillText(total,cx,cy+4);ctx.fillStyle='var(--sub)';ctx.font='9px Syne';ctx.fillText('TRADE',cx,cy+16);
+  let lx=20;data.forEach(d=>{ctx.fillStyle=d.color;ctx.fillRect(lx,H-16,10,10);ctx.fillStyle='var(--sub)';ctx.font='10px Syne';ctx.textAlign='left';ctx.fillText(d.label+': '+d.count,lx+14,H-7);lx+=80;});
+}
+
+function renderMonth() {
+  const canvas=document.getElementById('monthCanvas');
+  const dpr=window.devicePixelRatio||1,W=canvas.parentElement.clientWidth-36,H=150;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  if(!trades.length)return;
+  const byM={};trades.forEach(t=>{const m=t.date?.slice(0,7);if(m)byM[m]=(byM[m]||0)+netV(t);});
+  const months=Object.keys(byM).sort(),vals=months.map(m=>byM[m]);
+  const maxV=Math.max(...vals.map(Math.abs))||1;
+  const pad={l:56,r:12,t:12,b:28},cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const bW=Math.min(40,(cW/months.length)*.6);
+  const xOf=i=>pad.l+(i+.5)*(cW/months.length);
+  const yOf=v=>pad.t+cH/2-(v/maxV)*(cH/2*.9);
+  ctx.strokeStyle='rgba(37,45,61,.8)';ctx.lineWidth=.5;
+  [-1,-.5,0,.5,1].forEach(f=>{const y=yOf(f*maxV);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='rgba(107,122,153,.7)';ctx.font='8px JetBrains Mono';ctx.textAlign='right';ctx.fillText((f*maxV>=0?'+':'')+(f*maxV).toFixed(0),pad.l-5,y+3);});
+  ctx.strokeStyle='rgba(107,122,153,.5)';ctx.setLineDash([3,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,yOf(0));ctx.lineTo(W-pad.r,yOf(0));ctx.stroke();ctx.setLineDash([]);
+  vals.forEach((v,i)=>{const x=xOf(i),y=v>=0?yOf(v):yOf(0),h=Math.abs(yOf(v)-yOf(0));ctx.fillStyle=v>=0?'rgba(0,212,170,.7)':'rgba(255,77,106,.7)';ctx.fillRect(x-bW/2,y,bW,h||2);ctx.fillStyle='rgba(107,122,153,.7)';ctx.font='8px JetBrains Mono';ctx.textAlign='center';ctx.fillText(months[i].slice(5),x,H-pad.b+14);});
+}
+
+// ── SETTINGS ───────────────────────────────────────────────
+window.resetInstruments = function() {
+  if (!confirm('Ripristinare tutti gli strumenti ai valori di default?\nGli strumenti custom aggiunti da te verranno mantenuti.')) return;
+  const custom = instruments.filter(i => !DEFAULT_INSTRUMENTS.find(d => d.name === i.name));
+  instruments = [...DEFAULT_INSTRUMENTS, ...custom];
+  saveLocal();
+  renderSettings();
+  renderForm();
+  toast('✓ Anagrafica ripristinata ai default');
+};
+
+window.saveSettings = function() {
+  settings.risk    =parseFloat(document.getElementById('s-risk').value)||200;
+  settings.currency=document.getElementById('s-currency').value;
+  saveLocal(); renderAll(); toast('✓ Salvato');
+};
+
+function renderSettings() {
+  document.getElementById('s-risk').value=settings.risk;
+  document.getElementById('s-currency').value=settings.currency;
+  renderInstrGrid();
+}
+
+function renderInstrGrid() {
+  document.getElementById('instrGrid').innerHTML=instruments.map((ins,i)=>`
+    <div class="instr-card" data-idx="${i}">
+      <div class="instr-name"><span>${ins.name} <span style="font-size:9px;color:var(--sub);font-weight:400">${ins.cat}</span></span>
+      <button class="remove-instr" onclick="removeInstr(${i})">✕</button></div>
+      <div class="instr-row"><label>Tick Size (punti/tick)</label>
+        <input type="number" class="instr-ticksize" value="${ins.tickSize||1}" step="0.001"></div>
+      <div class="instr-row"><label>Tick Value (${ins.currency||CUR()}/tick)</label>
+        <input type="number" class="instr-tv" value="${ins.tv}" step="0.01"></div>
+      <div class="instr-row"><label>Commissione (${ins.currency||CUR()})</label>
+        <input type="number" class="instr-comm" value="${ins.comm}" step="0.01"></div>
+      <div class="instr-row"><label>Valuta</label>
+        <select class="instr-currency" style="padding:6px 8px;font-size:11px">
+          <option value="" ${!ins.currency?'selected':''}>Default (${CUR()})</option>
+          <option value="$" ${ins.currency==='$'?'selected':''}>$ Dollaro</option>
+          <option value="€" ${ins.currency==='€'?'selected':''}>€ Euro</option>
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+window.saveInstrGrid = function() {
+  document.querySelectorAll('#instrGrid .instr-card').forEach(card => {
+    const i        = parseInt(card.dataset.idx);
+    const tickSize = parseFloat(card.querySelector('.instr-ticksize').value) || 1;
+    const tv       = parseFloat(card.querySelector('.instr-tv').value)       || 1;
+    const comm     = parseFloat(card.querySelector('.instr-comm').value)     || 0;
+    const currency = card.querySelector('.instr-currency').value             || '';
+    if (instruments[i]) {
+      instruments[i].tickSize  = tickSize;
+      instruments[i].tv        = tv;
+      instruments[i].comm      = comm;
+      instruments[i].currency  = currency || undefined;
+    }
+  });
+  saveLocal();
+  renderForm();
+  toast('✓ Anagrafica salvata!');
+};
+
+window.removeInstr = function(i) {
+  if(!confirm('Rimuovere '+instruments[i].name+'?'))return;
+  instruments.splice(i,1);saveLocal();renderSettings();renderForm();toast('Rimosso');
+};
+window.toggleAddInstr = function() {
+  const f=document.getElementById('addInstrForm');f.style.display=f.style.display==='none'?'block':'none';
+};
+window.addInstrument = function() {
+  const name=(document.getElementById('ni-name').value||'').toUpperCase().trim();
+  const tv=parseFloat(document.getElementById('ni-tv').value)||1;
+  const comm=parseFloat(document.getElementById('ni-comm').value)||0;
+  const cat=document.getElementById('ni-cat').value;
+  if(!name){toast('Nome mancante!',true);return;}
+  if(instruments.find(i=>i.name===name)){toast('Già esistente!',true);return;}
+  instruments.push({name,tv,comm,cat});saveLocal();renderSettings();renderForm();
+  document.getElementById('ni-name').value='';
+  document.getElementById('addInstrForm').style.display='none';
+  toast('✓ Aggiunto: '+name);
+};
+
+// ── ALERT & BEEP ───────────────────────────────────────────
+function showAlert(type, pos) {
+  const overlay = document.getElementById('alertOverlay');
+  const details = document.getElementById('alertCloseDetails');
+  const rMult   = pos.rMult ?? null;
+  const net     = pos.net   ?? null;
+
+  document.getElementById('alertIcon').textContent  = type==='open' ? '📡' : (rMult>=0 ? '✅' : '🛑');
+  document.getElementById('alertTitle').textContent = type==='open' ? 'Posizione Aperta!' : 'Posizione Chiusa!';
+  document.getElementById('alertSym').textContent   = pos.sym;
+  document.getElementById('alertSub').textContent   = pos.dir + (pos.notes ? ' — ' + pos.notes : '');
+
+  if (type === 'close' && rMult !== null) {
+    details.style.display = 'block';
+    const rEl = document.getElementById('alertR');
+    rEl.textContent = (rMult>=0?'+':'') + rMult.toFixed(2) + 'R';
+    rEl.style.color = rMult > 0 ? 'var(--green)' : rMult < 0 ? 'var(--red)' : 'var(--sub)';
+    document.getElementById('alertEntry').textContent = pos.entry?.toFixed(2) || '—';
+    document.getElementById('alertExit').textContent  = pos.exitPrice?.toFixed(2) || '—';
+    const netEl = document.getElementById('alertNet');
+    netEl.textContent = net !== null ? (net>=0?'+':'')+CUR()+Math.abs(net).toFixed(2) : '—';
+    netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    details.style.display = 'none';
+  }
+
+  overlay.classList.add('show');
+  // Auto-dismiss dopo 8 secondi
+  clearTimeout(_alertDismissTimer);
+  _alertDismissTimer = setTimeout(dismissAlert, 8000);
+
+  // Browser notification
+  const notifBody = type==='open'
+    ? `${pos.dir} — Entry: ${pos.entry?.toFixed(2)||'—'}`
+    : `${pos.dir} — ${(rMult>=0?'+':'') + (rMult?.toFixed(2)||'?')}R — Net: ${CUR()}${net?.toFixed(2)||'?'}`;
+  if (Notification.permission==='granted') {
+    new Notification(`TradingDesk: ${pos.sym} ${type==='open'?'APERTA':'CHIUSA'}`, {
+      body: notifBody,
+      icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%2300D4AA"/></svg>'
+    });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+}
+window.dismissAlert = () => {
+  document.getElementById('alertOverlay').classList.remove('show');
+};
+
+// Auto-dismiss alert after 8 seconds
+let _alertDismissTimer = null;
+
+// ── GORDON GEKKO SPEAKER ────────────────────────────────────
+let _gordonTimeout = null;
+let _gordonUtter   = null;
+
+function gordonSpeak(text) {
+  // Solo testo e foto — nessun audio
+  if (isAdmin) return;
+  const overlay = document.getElementById('gordonOverlay');
+  const textEl  = document.getElementById('gordonText');
+  textEl.textContent = text;
+  overlay.classList.add('show');
+  // Auto-chiudi dopo 6 secondi
+  clearTimeout(_gordonTimeout);
+  _gordonTimeout = setTimeout(closeGordon, 6000);
+}
+
+window.closeGordon = function() {
+  clearTimeout(_gordonTimeout);
+  if (_gordonUtter) {
+    if (_gordonUtter instanceof Audio) {
+      _gordonUtter.pause();
+      _gordonUtter.currentTime = 0;
+    } else {
+      window.speechSynthesis.cancel();
+    }
+    _gordonUtter = null;
+  }
+  const mouth = document.getElementById('gordonMouth');
+  if (mouth) {
+    const p = mouth.querySelector('path');
+    if (p) p.setAttribute('d', 'M 52 98 Q 65 104 78 98');
+  }
+  document.getElementById('gordonOverlay').classList.remove('show');
+  // Rimuovi eventuale pulsante play rimasto
+  const btn = document.querySelector('.gordon-bubble button[style*="gold"]');
+  if (btn) btn.remove();
+};
+
+const GORDON_QUOTES = [
+  "Il denaro non dorme mai.",
+  "Mai saputo quanto ero povero prima di cominciare a fare soldi.",
+  "Il denaro non si crea, si trasferisce da una intuizione ad un'altra, magicamente.",
+  "L'avidità è giusta, l'avidità funziona, l'avidità chiarifica, penetra e cattura l'essenza dello spirito evolutivo."
+];
+
+function gordonQuote() {
+  return GORDON_QUOTES[Math.floor(Math.random() * GORDON_QUOTES.length)];
+}
+
+function buildGordonText(type, pos) {
+  const dir   = pos.dir === 'LONG' ? 'long' : 'short';
+  const sym   = pos.sym || '—';
+  const entry = pos.entry    ? pos.entry.toFixed(2)    : null;
+  const sl    = pos.sl       ? pos.sl.toFixed(2)       : null;
+  const tp    = pos.tp       ? pos.tp.toFixed(2)       : null;
+  const rMult = pos.rMult;
+  const exit  = pos.exitPrice? pos.exitPrice.toFixed(2): null;
+
+  if (type === 'open') {
+    let msg = `Hey Buddy, sono andato ${dir} su ${sym}`;
+    if (entry) msg += ` a ${entry}`;
+    if (sl)    msg += `, stop loss a ${sl}`;
+    if (tp)    msg += ` e take profit a ${tp}`;
+    msg += '. ' + gordonQuote();
+    return msg;
+  } else {
+    let msg = `Hey Buddy, chiuso il trade su ${sym}`;
+    if (exit) msg += ` a ${exit}`;
+    if (rMult !== undefined && rMult !== null) {
+      const rStr = rMult >= 0 ? `più ${rMult.toFixed(2)} R` : `meno ${Math.abs(rMult).toFixed(2)} R`;
+      msg += ` con ${rStr}`;
+    }
+    msg += '. ' + gordonQuote();
+    return msg;
+  }
+}
+
+
+
+function playBeep(freq=660) {
+  try {
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value=freq; osc.type='sine';
+    gain.gain.setValueAtTime(.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.6);
+    osc.start(); osc.stop(ctx.currentTime+.6);
+  } catch(e){}
+}
+
+// ── NAV ────────────────────────────────────────────────────
+window.showPage = function(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(id.slice(0,4)))b.classList.add('active');});
+  if(id==='stats') renderStats();
+  if(id==='settings') renderSettings();
+  setTimeout(()=>{renderEquity();renderRadar();},50);
+};
+
+// ── EXPORT ─────────────────────────────────────────────────
+window.exportCSV = function() {
+  const h='Data,Sym,Dir,Size,Ticks,TV,Gross,Comm,Net,Risk,R,Esito,Note\n';
+  const r=trades.map(t=>[t.date,t.sym,t.dir,t.size,t.ticks,t.tv,t.gross?.toFixed(2),t.comm?.toFixed(2),netV(t).toFixed(2),t.risk,rMul(t).toFixed(2),res(t),'"'+(t.notes||'')+'"'].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h+r],{type:'text/csv'}));a.download='trades_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+};
+
+window.copyLink = function() {
+  navigator.clipboard.writeText(window.location.href).then(()=>toast('✓ Link copiato!'));
+};
+
+// ── TOAST ──────────────────────────────────────────────────
+window.toast = function(msg,err=false) {
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast'+(err?' err':'')+' show';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2500);
+};
+
+// ── RENDER ALL ─────────────────────────────────────────────
+function renderAll() { renderKPIs(); renderTables(); renderEquity(); renderRadar(); }
+
+// ── INIT ───────────────────────────────────────────────────
+document.getElementById('topDate').textContent=new Date().toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});
+document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+// Request notification permission
+if(Notification.permission==='default') Notification.requestPermission();
+
+// Mostra pannello admin solo se URL contiene ?admin=1
+// Follower usano il link normale e non vedono la sezione login
+const _isAdminUrl = new URLSearchParams(window.location.search).has('admin');
+if (!_isAdminUrl) {
+  const lockEl = document.getElementById('adminLock');
+  if (lockEl) lockEl.style.display = 'none';
+  document.getElementById('modeIndicator').textContent = '👁 Viewer';
+}
+
+// Render immediato — non aspetta Firebase
+renderForm();
+renderAll();
+
+window.addEventListener('resize',()=>{renderEquity();renderRadar();if(document.getElementById('page-stats').classList.contains('active'))renderStats();});
+</script>
+</body>
+</html>
